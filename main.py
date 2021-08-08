@@ -1,5 +1,7 @@
 """
-
+python .\main.py --db COURSE --queries .\course\queries1.sql
+python .\main.py --db COMPANY --queries .\company\queries1.sql
+python .\main.py --db COURSE --pop
 """
 
 
@@ -14,20 +16,24 @@ def main( ):
     """
     
     parser = argparse.ArgumentParser(description='SQL exercises')
-    parser.add_argument('--db', required=True, type=str, help='Which data base? A(ssingments) or C(course)')
+    parser.add_argument('--db', required=True, type=str, help='Which data base? COURSE | COMPANY ')
     parser.add_argument('--pop', default=False, action="store_true", help='Populate data base')
+    parser.add_argument('--queries', type=str, help='queries file')
     Args =  parser.parse_args()
 
     print("Welcome to the PostGresSQL database interface")
 
-    if Args.db=="C":
+    QueriesFile = Args.queries
+
+    if Args.db=="COURSE":
         ConInfo = db.ReadCfg("database.cfg", "course_data")
         DbCon, DbCur = db.Connect(ConInfo)
-        QueriesFile = 'course_queries.sql'
-    elif Args.db=="A":
-        ConInfo = db.ReadCfg("database.cfg", "assign_data")
+    elif Args.db=="COMPANY":
+        ConInfo = db.ReadCfg("database.cfg", "company_data")
         DbCon, DbCur = db.Connect(ConInfo)
-        QueriesFile = 'assign_queries.sql'
+    else:
+        print("Select database: COURSE | COMPANY")
+        exit(-1)
     
     print("Connected to {}".format( ConInfo["db"] ) )
     
@@ -35,23 +41,23 @@ def main( ):
 
     # Populate database
     if Args.pop:
-        if Args.db == "C":
-            # Database exists, Table exists
+        if Args.db == "COURSE":
             print("Populating database course")
-            db.PopulateDb(DbCon, DbCur, "course_data.sql")
-    
-    ColNames = ["Col" for i in range(9) ]
-
-    with open(QueriesFile, 'r') as Fq:
-        while True:
-            EoF, Ok, Q = db.Get_Query(Fq)
-            if Ok:
-                print(Q)
-                R = db.Query(DbCur, Q)
-                db.Display(ColNames, R)
-                
-            if EoF:
-                break
+            db.PopulateDb(DbCon, DbCur, "course/course_data.sql")
+        elif Args.db == "COMPANY":
+            print("Populating database company")
+            db.PopulateDb(DbCon, DbCur, "company/company_data.sql")
+    else:
+        with open(QueriesFile, 'r') as Fq:
+            while True:
+                EoF, Ok, Q = db.Get_Query(Fq)
+                if Ok:
+                    print(Q)
+                    ColNames, R = db.Query(DbCur, Q)
+                    db.Display(ColNames, R)
+                    
+                if EoF:
+                    break
 
     DbCon.close()
 

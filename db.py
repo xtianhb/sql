@@ -5,22 +5,23 @@
 import psycopg2
 from configparser import ConfigParser
 
+#CONST
+COLSP=5
 
-INDT = [5, 10, 10, 25, 12, 12, 5, 8, 5]
 
-
-def FormatRow(Row):
+def FormatRow(Cn, Row):
     """
     """
     fRow = ""
     for i, c in enumerate(Row):
         sc = str(c)
-        sc = sc[ 0 : min( len(sc), INDT[i]-2 ) ]
-        fRow += sc + " "*(INDT[i]-len(sc))
+        lcn = len(Cn[i])
+        sc = sc[ 0 : min(len(sc), lcn+COLSP-2) ] 
+        fRow += sc + " "*(COLSP+lcn-len(sc))
     return fRow
 
 
-def Display(ColNames, Recs):
+def Display(ColName, Recs):
     """
     
     """
@@ -30,16 +31,16 @@ def Display(ColNames, Recs):
     A = input("There are {} records. Show? (y/n):".format(Nr) )
     if A=='y':
         H=""
-        for i, cn in enumerate(ColNames):
-            H += ( cn + " "*(INDT[i]-len(cn)) )
+        for i, cn in enumerate(ColName):
+            H += ( cn + COLSP*" " )  
         print(H)
         for i,Row in enumerate(Recs):
-            R = FormatRow(Row)
+            R = FormatRow(ColName, Row)
             print(R)
-            if i>0 and ((i+1)%10)==0:
-                C=input("Continue?:")
-                if C!="y":
-                    break
+            #if i>0 and ((i+1)%10)==0:
+            #    C=input("Continue?:")
+            #    if C!="y":
+            #        break
     return
 
 
@@ -63,6 +64,7 @@ def ReadCfg(filename='database.cfg', section='connection'):
     if db["ps"]=="":
         db["ps"] = input("Password:")
     return db
+
 
 def Connect(ConInfo):
     """ Connect
@@ -108,13 +110,15 @@ def Query(DbCur, Q):
     """ Query
     
     """
+    ColNames = []
     try:
-        DbCur.execute( Q )
+        DbCur.execute(Q)
         Res = DbCur.fetchall()
+        ColNames = [Desc[0] for Desc in DbCur.description]
     except: 
         print("Error with query:", Q)
         Res = ''
-    return Res
+    return ColNames, Res
 
 
 def Get_Query(Fq):
