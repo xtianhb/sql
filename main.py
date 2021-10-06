@@ -16,46 +16,31 @@ def main( ):
     """
     
     parser = argparse.ArgumentParser(description='SQL exercises')
-    parser.add_argument('--db', required=True, type=str, help='Which data base? COURSE | COMPANY ')
-    parser.add_argument('--pop', default=False, action="store_true", help='Populate data base')
-    parser.add_argument('--queries', type=str, help='queries file')
+    parser.add_argument('--populate', '-p', type=str, default="", help='Populate database')
+    parser.add_argument('--queries', '-q', type=str, default="", help='queries file')
     Args =  parser.parse_args()
 
     print("Welcome to the PostGresSQL database interface")
 
-    QueriesFile = Args.queries
-
-    if Args.db=="COURSE":
-        ConInfo = db.ReadCfg("database.cfg", "course_data")
-        DbCon, DbCur = db.Connect(ConInfo)
-    elif Args.db=="COMPANY":
-        ConInfo = db.ReadCfg("database.cfg", "company_data")
-        DbCon, DbCur = db.Connect(ConInfo)
-    else:
-        print("Select database: COURSE | COMPANY")
-        exit(-1)
-    
+   
+    ConInfo = db.ReadCfg("database.cfg", "database")
+    DbCon, DbCur = db.Connect(ConInfo)
     print("Connected to {}".format( ConInfo["db"] ) )
     
     db.Version(DbCur)
 
     # Populate database
-    if Args.pop:
-        if Args.db == "COURSE":
-            print("Populating database course")
-            db.PopulateDb(DbCon, DbCur, "course/course_data.sql")
-        elif Args.db == "COMPANY":
-            print("Populating database company")
-            db.PopulateDb(DbCon, DbCur, "company/company_data.sql")
-    else:
-        with open(QueriesFile, 'r') as Fq:
+    if Args.populate != "":
+        print("Populating with ", Args.populate)
+        db.PopulateDb(DbCon, DbCur, Args.populate)
+    elif Args.queries != "":
+        with open(Args.queries, 'r') as Fq:
             while True:
                 EoF, Ok, Q = db.Get_Query(Fq)
                 if Ok:
                     print(Q)
                     ColNames, R = db.Query(DbCur, Q)
                     db.Display(ColNames, R)
-                    
                 if EoF:
                     break
 

@@ -2,14 +2,12 @@
 
 """
 
+
 import psycopg2
 from configparser import ConfigParser
 
-#CONST
-COLSP=5
 
-
-def FormatRow(Cn, Row):
+def FormatRow(Cn, Row, COLSP):
     """
     """
     fRow = ""
@@ -25,17 +23,22 @@ def Display(ColName, Recs):
     """
     
     """
-    
-    
+    NCols = len( ColName )
+    if NCols == 0:
+        return
+
     Nr = len(Recs)
-    A = input("There are {} records. Show? (y/n):".format(Nr) )
-    if A=='y':
-        H=""
+    A = 'y'
+    if Nr>50:
+        A = input("There are {} records. Show? (y/n):".format(Nr) )
+    if A.lower()=='y':
+        H=""        
+        COLSP = int( 80 / NCols )
         for i, cn in enumerate(ColName):
             H += ( cn + COLSP*" " )  
         print(H)
         for i,Row in enumerate(Recs):
-            R = FormatRow(ColName, Row)
+            R = FormatRow(ColName, Row, COLSP)
             print(R)
             #if i>0 and ((i+1)%10)==0:
             #    C=input("Continue?:")
@@ -95,10 +98,15 @@ def Version(Cur):
 
 
 def PopulateDb(DbCon, DbCur, SqlScript):
-    sqlfile = open(SqlScript, 'r')
-    DbCur.execute( sqlfile.read() )
-    DbCon.commit()
-    sqlfile.close()
+    try:
+        sqlfile = open(SqlScript, 'r')
+        DbCur.execute( sqlfile.read() )
+        DbCon.commit()
+        sqlfile.close()
+    except psycopg2.errors.DuplicateTable as SErr:
+        print("ERR:", SErr)
+    except:
+        print("Error populating database")
     return
 
 
@@ -115,8 +123,17 @@ def Query(DbCur, Q):
         DbCur.execute(Q)
         Res = DbCur.fetchall()
         ColNames = [Desc[0] for Desc in DbCur.description]
-    except: 
-        print("Error with query:", Q)
+    except psycopg2.errors.SyntaxError as SErr: 
+        print("Error:", SErr)
+        Res = ''
+    except psycopg2.errors.UndefinedColumn as SErr: 
+        print("Error:", SErr)
+        Res = ''
+    except psycopg2.errors.GroupingError as SErr: 
+        print("Error:", SErr)
+        Res = ''
+    except psycopg2.errors.CardinalityViolation as SErr:
+        print("Error:", SErr)
         Res = ''
     return ColNames, Res
 
