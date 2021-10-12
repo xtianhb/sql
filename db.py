@@ -135,6 +135,10 @@ def Query(DbCur, Q):
     except psycopg2.errors.CardinalityViolation as SErr:
         print("Error:", SErr)
         Res = ''
+    except psycopg2.errors.UndefinedTable as SErr:
+        print("Error:", SErr)
+        Res = ''
+        
     return ColNames, Res
 
 

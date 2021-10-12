@@ -21,7 +21,6 @@ def main( ):
     Args =  parser.parse_args()
 
     print("Welcome to the PostGresSQL database interface")
-
    
     ConInfo = db.ReadCfg("database.cfg", "database")
     DbCon, DbCur = db.Connect(ConInfo)
