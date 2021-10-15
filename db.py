@@ -2,7 +2,7 @@
 
 """
 
-
+import sys
 import psycopg2
 from configparser import ConfigParser
 
@@ -33,7 +33,7 @@ def Display(ColName, Recs):
         A = input("There are {} records. Show? (y/n):".format(Nr) )
     if A.lower()=='y':
         H=""        
-        COLSP = int( 80 / NCols )
+        COLSP = int( 80 /(NCols+1) )
         for i, cn in enumerate(ColName):
             H += ( cn + COLSP*" " )  
         print(H)
@@ -89,11 +89,10 @@ def Version(Cur):
     """
 
     # execute a statement
-    print('PostgreSQL database version:')
     Cur.execute('SELECT version()')
     # display the PostgreSQL database server version
     db_version = Cur.fetchone()
-    print(db_version)
+    print("PostgreSQL version: " + db_version[0] )
     return
 
 
@@ -114,31 +113,25 @@ def DropTable(DbCur, Table):
     pass
 
 
-def Query(DbCur, Q):
+def Query(DbCon, DbCur, Q):
     """ Query
     
     """
     ColNames = []
     try:
+        Res=""
         DbCur.execute(Q)
         Res = DbCur.fetchall()
         ColNames = [Desc[0] for Desc in DbCur.description]
-    except psycopg2.errors.SyntaxError as SErr: 
-        print("Error:", SErr)
-        Res = ''
-    except psycopg2.errors.UndefinedColumn as SErr: 
-        print("Error:", SErr)
-        Res = ''
-    except psycopg2.errors.GroupingError as SErr: 
-        print("Error:", SErr)
-        Res = ''
-    except psycopg2.errors.CardinalityViolation as SErr:
-        print("Error:", SErr)
-        Res = ''
-    except psycopg2.errors.UndefinedTable as SErr:
-        print("Error:", SErr)
-        Res = ''
-        
+    except Exception as Err:
+        err_type, err_obj, traceback = sys.exc_info()
+        line_num = traceback.tb_lineno
+        print ("psycopg2 ERROR:" + str(Err) + "Line number:", line_num)
+        print ("psycopg2 traceback:", traceback, "-- type:", err_type)
+        print ("extensions.Diagnostics:", Err.diag)
+        print ("pgerror:", Err.pgerror)
+        print ("pgcode:", Err.pgcode, "\n")
+        DbCon.rollback()
     return ColNames, Res
 
 
@@ -153,16 +146,16 @@ def Get_Query(Fq):
     Ok = False
     while True:
         l = Fq.readline()
-        if "--" in l:
-            print("Skip -- line")
+        if ("--" in l) :
+            # skip line
             continue
         elif l=="":
-            print("EoF")
             EoF=True
             break
         else:
             Q += l
             if ";" in Q:
-                Ok=True
+                Ok = True
                 break
+
     return EoF, Ok, Q

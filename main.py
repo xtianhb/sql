@@ -9,6 +9,7 @@ import sys
 import db
 import argparse
 
+SEPARATOR = 40*" -"
 
 def main( ):
     """ main
@@ -20,12 +21,13 @@ def main( ):
     parser.add_argument('--queries', '-q', type=str, default="", help='queries file')
     Args =  parser.parse_args()
 
+    print(SEPARATOR)
+
     print("Welcome to the PostGresSQL database interface")
    
     ConInfo = db.ReadCfg("database.cfg", "database")
     DbCon, DbCur = db.Connect(ConInfo)
-    print("Connected to {}".format( ConInfo["db"] ) )
-    
+    print("Connected to database: {}".format( ConInfo["db"] ) )
     db.Version(DbCur)
 
     # Populate database
@@ -37,16 +39,19 @@ def main( ):
             while True:
                 EoF, Ok, Q = db.Get_Query(Fq)
                 if Ok:
+                    print(SEPARATOR)
                     print(Q)
-                    ColNames, R = db.Query(DbCur, Q)
+                    ColNames, R = db.Query(DbCon, DbCur, Q)
                     db.Display(ColNames, R)
                 if EoF:
+                    print(SEPARATOR)
+                    print("EoF")
                     break
 
     DbCon.close()
 
-    print("Connection closed")
-    
+    print(SEPARATOR)
+
     return
 
 
