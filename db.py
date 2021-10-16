@@ -104,8 +104,6 @@ def PopulateDb(DbCon, DbCur, SqlScript):
         sqlfile.close()
     except psycopg2.errors.DuplicateTable as SErr:
         print("ERR:", SErr)
-    except:
-        print("Error populating database")
     return
 
 

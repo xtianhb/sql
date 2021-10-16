@@ -34,6 +34,7 @@ def main( ):
     if Args.populate != "":
         print("Populating with ", Args.populate)
         db.PopulateDb(DbCon, DbCur, Args.populate)
+        print("Done.")
     elif Args.queries != "":
         with open(Args.queries, 'r') as Fq:
             while True:
